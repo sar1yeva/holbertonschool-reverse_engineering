@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Check argument count
+# Check if exactly one argument is provided
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <elf_file>"
     exit 1
@@ -14,24 +14,45 @@ if [ ! -f "$file_name" ]; then
     exit 1
 fi
 
-# Check if file is a valid ELF
+# Check if the file is a valid ELF file
 if ! readelf -h "$file_name" >/dev/null 2>&1; then
     echo "Error: File is not a valid ELF file."
     exit 1
 fi
 
-# Load display function
+# Load output function
 source ./messages.sh
 
 # Extract ELF header information
-magic_number=$(readelf -h "$file_name" | awk -F: '/Magic:/ {gsub(/^[ \t]+/, "", $2); print $2}')
+magic_number=$(readelf -h "$file_name" | awk '
+/Magic:/ {
+    for (i=2; i<=NF; i++) {
+        printf "%s", $i
+        if (i < NF)
+            printf " "
+    }
+    printf "\n"
+}')
 
-class=$(readelf -h "$file_name" | awk -F: '/Class:/ {gsub(/^[ \t]+/, "", $2); print $2}')
+class=$(readelf -h "$file_name" | awk -F: '
+/Class:/ {
+    gsub(/^[[:space:]]+/, "", $2)
+    print $2
+}')
 
-# Only extract "little endian" or "big endian"
-byte_order=$(readelf -h "$file_name" | grep "Data:" | grep -oE '(little|big) endian')
+byte_order=$(readelf -h "$file_name" | awk '
+/Data:/ {
+    if ($0 ~ /little endian/)
+        print "little endian"
+    else if ($0 ~ /big endian/)
+        print "big endian"
+}')
 
-entry_point_address=$(readelf -h "$file_name" | awk -F: '/Entry point address:/ {gsub(/^[ \t]+/, "", $2); print $2}')
+entry_point_address=$(readelf -h "$file_name" | awk -F: '
+/Entry point address:/ {
+    gsub(/^[[:space:]]+/, "", $2)
+    print $2
+}')
 
-# Display output
+# Display the information
 display_elf_header_info
