@@ -1,1 +1,1 @@
-61
+readelf -S /home/kali/Desktop/task1
