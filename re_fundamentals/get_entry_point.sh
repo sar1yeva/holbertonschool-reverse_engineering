@@ -14,23 +14,24 @@ if [ ! -f "$file_name" ]; then
     exit 1
 fi
 
-# Check if file is ELF
+# Check if file is a valid ELF
 if ! readelf -h "$file_name" >/dev/null 2>&1; then
     echo "Error: File is not a valid ELF file."
     exit 1
 fi
 
-# Source messages.sh
+# Load display function
 source ./messages.sh
 
-# Extract information
-magic_number=$(readelf -h "$file_name" | grep "Magic:" | cut -d: -f2 | xargs)
+# Extract ELF header information
+magic_number=$(readelf -h "$file_name" | awk -F: '/Magic:/ {gsub(/^[ \t]+/, "", $2); print $2}')
 
-class=$(readelf -h "$file_name" | grep "Class:" | awk -F: '{print $2}' | xargs)
+class=$(readelf -h "$file_name" | awk -F: '/Class:/ {gsub(/^[ \t]+/, "", $2); print $2}')
 
-byte_order=$(readelf -h "$file_name" | grep "Data:" | cut -d: -f2 | xargs)
+# Only extract "little endian" or "big endian"
+byte_order=$(readelf -h "$file_name" | grep "Data:" | grep -oE '(little|big) endian')
 
-entry_point_address=$(readelf -h "$file_name" | grep "Entry point address:" | awk -F: '{print $2}' | xargs)
+entry_point_address=$(readelf -h "$file_name" | awk -F: '/Entry point address:/ {gsub(/^[ \t]+/, "", $2); print $2}')
 
-# Display information
+# Display output
 display_elf_header_info
