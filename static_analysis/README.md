@@ -1,1 +1,1 @@
-static analysis
+Static analysis
